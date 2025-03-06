@@ -19,10 +19,9 @@ namespace Project_Compare_Files
 
             foo.StartSync(
                 @"C:\Users\john\Desktop\My_Pictures",
-                @"F:\My_Pictures",
+                @"E:\My_Pictures",
                 @"C:\Users\john\Desktop",
-                @"F:",
-                true);
+                @"E:");
 
             
             Console.WriteLine("Here");

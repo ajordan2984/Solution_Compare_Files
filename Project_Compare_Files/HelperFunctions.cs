@@ -5,6 +5,35 @@ namespace Project_Compare_Files
 {
     static public class HelperFunctions
     {
+        static public void RecursiveRemoveDirectories(string directory)
+        {
+            try
+            {
+                List<string> allDirectories = new List<string>(Directory.GetDirectories(directory));
+
+                if (allDirectories.Count > 0)
+                {
+                    foreach (string subDirectory in allDirectories)
+                    {
+                        RecursiveRemoveDirectories(subDirectory);
+                    }
+                }
+
+                string[] hasFiles = Directory.GetFiles(directory);
+                string[] hasSubDirectories = Directory.GetDirectories(directory);
+
+                if (hasFiles.Length == 0 && hasSubDirectories.Length == 0)
+                {
+                    Directory.Delete(directory);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+
         static public SortedDictionary<string, string> GetAllFilesFromPath(string startingDirectory)
         {
             List<string> allDirectories = new List<string>(Directory.GetDirectories(startingDirectory));
@@ -89,22 +118,8 @@ namespace Project_Compare_Files
 
                         Directory.CreateDirectory(Path.GetDirectoryName(quarantineFilePath));
                         File.Move(fileFromExternalDrive, quarantineFilePath);
-
-                        string directoryFileOnExternalDriveWasIn = filesFromExternalDrive[fileFromExternalDrive];
-
-                        if (Directory.Exists(directoryFileOnExternalDriveWasIn))
-                        {
-                            string[] hasSubDirectories = Directory.GetDirectories(directoryFileOnExternalDriveWasIn);
-                            string[] hasFiles = Directory.GetFiles(directoryFileOnExternalDriveWasIn);
-
-                            if (hasSubDirectories.Length == 0 && hasFiles.Length == 0)
-                            {
-                                Directory.Delete(directoryFileOnExternalDriveWasIn);
-                            }
-                        }
                     }
                 }
-
             }
             catch (Exception ex)
             {

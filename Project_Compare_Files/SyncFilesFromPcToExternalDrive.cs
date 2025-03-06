@@ -12,13 +12,11 @@ namespace Project_Compare_Files
         string _shortPathToA;
         string _shortPathToB;
 
-        bool _quarantineFilesNotOnPc;
-
         SortedDictionary<string, string> allSortedFilesFromPcPath;
         SortedDictionary<string, string> allSortedFilesFromFromExternalDrive;
 
-        public SyncFilesFromPcToExternalDrive()   
-        {   
+        public SyncFilesFromPcToExternalDrive()
+        {
             // Empty
         }
 
@@ -26,8 +24,7 @@ namespace Project_Compare_Files
             string PathA,
             string PathB,
             string PathToRemove,
-            string PathToAdd,
-            bool QuarantineFilesFromExternalDriveNotOnPc)
+            string PathToAdd)
         {
             if (Directory.Exists(PathA))
             {
@@ -61,7 +58,6 @@ namespace Project_Compare_Files
 
             _shortPathToA = PathToRemove;
             _shortPathToB = PathToAdd;
-            _quarantineFilesNotOnPc = QuarantineFilesFromExternalDriveNotOnPc;
 
             SyncFiles();
             return true;
@@ -79,15 +75,14 @@ namespace Project_Compare_Files
                 _shortPathToB
                 );
 
+            HelperFunctions.QuarantineFiles(
+            allSortedFilesFromPcPath,
+            allSortedFilesFromFromExternalDrive,
+            _shortPathToA,
+            _shortPathToB);
 
-            if (_quarantineFilesNotOnPc)
-            {
-                HelperFunctions.QuarantineFiles(
-                allSortedFilesFromPcPath,
-                allSortedFilesFromFromExternalDrive,
-                _shortPathToA,
-                _shortPathToB);
-            }
+            HelperFunctions.RecursiveRemoveDirectories(_pathB);
+
 
             return;
         }
