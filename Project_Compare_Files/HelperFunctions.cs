@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Project_Compare_Files
 {
@@ -33,8 +31,6 @@ namespace Project_Compare_Files
             return shortenedPath.TrimEnd('\\');
         }
 
-
-
         static public SortedDictionary<string, string> GetAllFilesFromPath(string startingDirectory)
         {
             List<string> allDirectories = new List<string>(Directory.GetDirectories(startingDirectory));
@@ -52,18 +48,6 @@ namespace Project_Compare_Files
                     Console.WriteLine(ex.Message);
                 }
             }
-
-            //string pattern = @"^(?:[Dd]ebug|[Dd]ebugPublic|[Rr]elease|[Rr]eleases|x64|x86|[Aa][Rr][Mm]|[Aa][Rr][Mm]64|bld|[Bb]in|[Oo]bj|[Ll]og|\.vs)$";
-
-            //var filteredDirectories = allDirectories
-            //.Where(dir => !Regex.IsMatch(new DirectoryInfo(dir).Name, pattern, RegexOptions.IgnoreCase))
-            //.ToList();
-
-            //foreach (var dir in filteredDirectories)
-            //{
-            //    Console.WriteLine(dir);
-            //}
-
 
             foreach (string directory in allDirectories)
             {
