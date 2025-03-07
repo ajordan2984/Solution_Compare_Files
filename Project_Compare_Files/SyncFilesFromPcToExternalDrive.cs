@@ -22,9 +22,7 @@ namespace Project_Compare_Files
 
         public bool StartSync(
             string PathA,
-            string PathB,
-            string PathToRemove,
-            string PathToAdd)
+            string PathB)
         {
             if (Directory.Exists(PathA))
             {
@@ -56,8 +54,8 @@ namespace Project_Compare_Files
                 return false;
             }
 
-            _shortPathToA = PathToRemove;
-            _shortPathToB = PathToAdd;
+            _shortPathToA = HelperFunctions.ShortenedPath(PathA);
+            _shortPathToB = HelperFunctions.ShortenedPath(PathB);
 
             SyncFiles();
             return true;

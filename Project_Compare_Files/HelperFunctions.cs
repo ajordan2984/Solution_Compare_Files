@@ -1,37 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+
 namespace Project_Compare_Files
 {
     static public class HelperFunctions
     {
-        static public void RecursiveRemoveDirectories(string directory)
+        static public string ShortenedPath(string path)
         {
+            string[] tokens = null;
+            string shortenedPath = "";
+
             try
             {
-                List<string> allDirectories = new List<string>(Directory.GetDirectories(directory));
+                tokens = path.Split('\\');
 
-                if (allDirectories.Count > 0)
+                if (tokens != null)
                 {
-                    foreach (string subDirectory in allDirectories)
+                    for (int i = 0; i < tokens.Length - 1; i++)
                     {
-                        RecursiveRemoveDirectories(subDirectory);
+                        shortenedPath += tokens[i] + '\\';
                     }
-                }
-
-                string[] hasFiles = Directory.GetFiles(directory);
-                string[] hasSubDirectories = Directory.GetDirectories(directory);
-
-                if (hasFiles.Length == 0 && hasSubDirectories.Length == 0)
-                {
-                    Directory.Delete(directory);
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
+
+            return shortenedPath.TrimEnd('\\');
         }
+
 
 
         static public SortedDictionary<string, string> GetAllFilesFromPath(string startingDirectory)
@@ -46,11 +47,23 @@ namespace Project_Compare_Files
                 {
                     allDirectories.AddRange(Directory.GetDirectories(allDirectories[i]));
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-
+                    Console.WriteLine(ex.Message);
                 }
             }
+
+            //string pattern = @"^(?:[Dd]ebug|[Dd]ebugPublic|[Rr]elease|[Rr]eleases|x64|x86|[Aa][Rr][Mm]|[Aa][Rr][Mm]64|bld|[Bb]in|[Oo]bj|[Ll]og|\.vs)$";
+
+            //var filteredDirectories = allDirectories
+            //.Where(dir => !Regex.IsMatch(new DirectoryInfo(dir).Name, pattern, RegexOptions.IgnoreCase))
+            //.ToList();
+
+            //foreach (var dir in filteredDirectories)
+            //{
+            //    Console.WriteLine(dir);
+            //}
+
 
             foreach (string directory in allDirectories)
             {
@@ -66,9 +79,9 @@ namespace Project_Compare_Files
                         }
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-
+                    Console.WriteLine(ex.Message);
                 }
             }
             return directories;
@@ -119,6 +132,34 @@ namespace Project_Compare_Files
                         Directory.CreateDirectory(Path.GetDirectoryName(quarantineFilePath));
                         File.Move(fileFromExternalDrive, quarantineFilePath);
                     }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        static public void RecursiveRemoveDirectories(string directory)
+        {
+            try
+            {
+                List<string> allDirectories = new List<string>(Directory.GetDirectories(directory));
+
+                if (allDirectories.Count > 0)
+                {
+                    foreach (string subDirectory in allDirectories)
+                    {
+                        RecursiveRemoveDirectories(subDirectory);
+                    }
+                }
+
+                string[] hasFiles = Directory.GetFiles(directory);
+                string[] hasSubDirectories = Directory.GetDirectories(directory);
+
+                if (hasFiles.Length == 0 && hasSubDirectories.Length == 0)
+                {
+                    Directory.Delete(directory);
                 }
             }
             catch (Exception ex)

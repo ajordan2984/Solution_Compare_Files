@@ -8,23 +8,9 @@ namespace Project_Compare_Files
         {
             SyncFilesFromPcToExternalDrive foo = new SyncFilesFromPcToExternalDrive();
 
-            // C:\Users\john\Documents
-            // C:\Users\john\Desktop\My_Pictures
-
-            // E:\Documents
-            // E:\My_Pictures
-
-            // C:\Users\john
-            // C:\Users\john\Desktop
-
             foo.StartSync(
                 @"C:\Users\john\Desktop\My_Pictures",
-                @"E:\My_Pictures",
-                @"C:\Users\john\Desktop",
-                @"E:");
-
-            
-            Console.WriteLine("Here");
+                @"E:\My_Pictures");
         }
     }
 }
