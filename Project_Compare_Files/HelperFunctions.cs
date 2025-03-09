@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Project_Compare_Files
 {
@@ -31,10 +32,14 @@ namespace Project_Compare_Files
             return shortenedPath.TrimEnd('\\');
         }
 
-        static public SortedDictionary<string, string> GetAllFilesFromPath(string startingDirectory)
+        static public SortedDictionary<string, FileInfoHolder> GetAllFilesFromPath(string startingDirectory)
         {
-            List<string> allDirectories = new List<string>(Directory.GetDirectories(startingDirectory));
-            SortedDictionary<string, string> directories = new SortedDictionary<string, string>();
+            List<string> allDirectories =
+                Directory.GetDirectories(startingDirectory)
+                .Where(dir => !dir.Contains("GitHub"))
+                .ToList();
+
+            SortedDictionary<string, FileInfoHolder> directories = new SortedDictionary<string, FileInfoHolder>();
             List<string> files = new List<string>();
 
             for (int i = 0; i < allDirectories.Count; i++)
@@ -59,7 +64,9 @@ namespace Project_Compare_Files
                     {
                         if (!directories.ContainsKey(file))
                         {
-                            directories.Add(file, directory);
+                            FileInfo fi = new FileInfo(file);
+                            FileInfoHolder fih = new FileInfoHolder(directory, fi.LastWriteTimeUtc);
+                            directories.Add(file, fih);
                         }
                     }
                 }
@@ -72,8 +79,8 @@ namespace Project_Compare_Files
         }
 
         static public void CopyFilesFromOneDriveToAnotherDrive(
-            SortedDictionary<string, string> filesFromPcPath,
-            SortedDictionary<string, string> filesFromExternalDrive,
+            SortedDictionary<string, FileInfoHolder> filesFromPcPath,
+            SortedDictionary<string, FileInfoHolder> filesFromExternalDrive,
             string _pathAToRemove,
             string _pathBToAdd)
         {
@@ -88,6 +95,16 @@ namespace Project_Compare_Files
                         Directory.CreateDirectory(Path.GetDirectoryName(destinationPathForFile));
                         File.Copy(file, destinationPathForFile);
                     }
+                    else
+                    {
+                        var pcFih = filesFromPcPath[file];
+                        var exFih = filesFromExternalDrive[destinationPathForFile];
+
+                        if (pcFih.Modified > exFih.Modified)
+                        {
+                            File.Copy(file, destinationPathForFile, true);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -97,8 +114,8 @@ namespace Project_Compare_Files
         }
 
         static public void QuarantineFiles(
-            SortedDictionary<string, string> filesFromPcPath,
-            SortedDictionary<string, string> filesFromExternalDrive,
+            SortedDictionary<string, FileInfoHolder> filesFromPcPath,
+            SortedDictionary<string, FileInfoHolder> filesFromExternalDrive,
             string _shortPathToA,
             string _shortPathToB
             )

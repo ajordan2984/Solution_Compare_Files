@@ -11,6 +11,10 @@ namespace Project_Compare_Files
             foo.StartSync(
                 @"C:\Users\john\Desktop\My_Pictures",
                 @"E:\My_Pictures");
+
+            //foo.StartSync(
+            //    @"C:\Users\john\Documents",
+            //    @"F:\Documents");
         }
     }
 }

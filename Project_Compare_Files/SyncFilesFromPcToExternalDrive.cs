@@ -12,8 +12,8 @@ namespace Project_Compare_Files
         string _shortPathToA;
         string _shortPathToB;
 
-        SortedDictionary<string, string> allSortedFilesFromPcPath;
-        SortedDictionary<string, string> allSortedFilesFromFromExternalDrive;
+        SortedDictionary<string, FileInfoHolder> allSortedFilesFromPcPath;
+        SortedDictionary<string, FileInfoHolder> allSortedFilesFromFromExternalDrive;
 
         public SyncFilesFromPcToExternalDrive()
         {
