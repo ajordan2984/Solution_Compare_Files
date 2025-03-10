@@ -50,7 +50,7 @@ namespace Project_Compare_Files
 
             if (Path.GetFileName(pathA) != Path.GetFileName(pathB))
             {
-                Console.WriteLine($"Sorry the path: {_pathToFilesOnPc} does not match {_pathToFilesOnExternal}. Please try again.");
+                Console.WriteLine($"Sorry the end of path: {_pathToFilesOnPc} does not match the end of path {_pathToFilesOnExternal}. Please try again.");
                 return false;
             }
 
