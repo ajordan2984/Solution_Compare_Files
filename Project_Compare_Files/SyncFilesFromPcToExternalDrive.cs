@@ -6,11 +6,11 @@ namespace Project_Compare_Files
 {
     public class SyncFilesFromPcToExternalDrive
     {
-        string _pathA;
-        string _pathB;
+        string _pathToFilesOnPc;
+        string _pathToFilesOnExternal;
 
-        string _shortPathToA;
-        string _shortPathToB;
+        string _shortPathToFilesOnPc;
+        string _shortPathToFilesOnExternal;
 
         SortedDictionary<string, FileInfoHolder> allSortedFilesFromPcPath;
         SortedDictionary<string, FileInfoHolder> allSortedFilesFromFromExternalDrive;
@@ -21,41 +21,41 @@ namespace Project_Compare_Files
         }
 
         public bool StartSync(
-            string PathA,
-            string PathB)
+            string PathToFilesOnPc,
+            string PathToFilesOnExternal)
         {
-            if (Directory.Exists(PathA))
+            if (Directory.Exists(PathToFilesOnPc))
             {
-                _pathA = PathA;
+                _pathToFilesOnPc = PathToFilesOnPc;
             }
             else
             {
-                Console.WriteLine($"Sorry the path: {PathA} does not exist. Please try again.");
+                Console.WriteLine($"Sorry the path: {PathToFilesOnPc} does not exist. Please try again.");
                 return false;
             }
 
-            if (Directory.Exists(PathB))
+            if (Directory.Exists(PathToFilesOnExternal))
             {
-                _pathB = PathB;
+                _pathToFilesOnExternal = PathToFilesOnExternal;
             }
             else
             {
-                Console.WriteLine($"Sorry the path: {PathB} does not exist. Please try again.");
+                Console.WriteLine($"Sorry the path: {PathToFilesOnExternal} does not exist. Please try again.");
                 return false;
             }
 
-            string pathA = Path.GetFileName(_pathA);
-            string pathB = Path.GetFileName(_pathB);
+            string pathA = Path.GetFileName(_pathToFilesOnPc);
+            string pathB = Path.GetFileName(_pathToFilesOnExternal);
 
 
             if (Path.GetFileName(pathA) != Path.GetFileName(pathB))
             {
-                Console.WriteLine($"Sorry the path: {Path.GetFileName(_pathA)} does not match {Path.GetFileName(_pathB)}. Please try again.");
+                Console.WriteLine($"Sorry the path: {_pathToFilesOnPc} does not match {_pathToFilesOnExternal}. Please try again.");
                 return false;
             }
 
-            _shortPathToA = HelperFunctions.ShortenedPath(PathA);
-            _shortPathToB = HelperFunctions.ShortenedPath(PathB);
+            _shortPathToFilesOnPc = HelperFunctions.ShortenedPath(_pathToFilesOnPc);
+            _shortPathToFilesOnExternal = HelperFunctions.ShortenedPath(_pathToFilesOnExternal);
 
             SyncFiles();
             return true;
@@ -63,24 +63,34 @@ namespace Project_Compare_Files
 
         public void SyncFiles()
         {
-            allSortedFilesFromPcPath = HelperFunctions.GetAllFilesFromPath(_pathA);
-            allSortedFilesFromFromExternalDrive = HelperFunctions.GetAllFilesFromPath(_pathB);
+            allSortedFilesFromFromExternalDrive = HelperFunctions.CheckForChanges($@"{_pathToFilesOnExternal}\Changes.txt");
+
+            if (allSortedFilesFromFromExternalDrive.Count == 0)
+            {
+                List<string> directoriesFromExternal = HelperFunctions.GetAllDirectories(_pathToFilesOnExternal);
+                allSortedFilesFromFromExternalDrive = HelperFunctions.GetAllFiles(directoriesFromExternal);
+            }
+
+            // Get files from Pc
+            List<string> directoriesFromPc = HelperFunctions.GetAllDirectories(_pathToFilesOnPc);
+            allSortedFilesFromPcPath = HelperFunctions.GetAllFiles(directoriesFromPc);
 
             HelperFunctions.CopyFilesFromOneDriveToAnotherDrive(
                 allSortedFilesFromPcPath,
                 allSortedFilesFromFromExternalDrive,
-                _shortPathToA,
-                _shortPathToB
+                _shortPathToFilesOnPc,
+                _shortPathToFilesOnExternal
                 );
 
             HelperFunctions.QuarantineFiles(
             allSortedFilesFromPcPath,
             allSortedFilesFromFromExternalDrive,
-            _shortPathToA,
-            _shortPathToB);
+            _shortPathToFilesOnPc,
+            _shortPathToFilesOnExternal);
 
-            HelperFunctions.RecursiveRemoveDirectories(_pathB);
+            HelperFunctions.RecursiveRemoveDirectories(_pathToFilesOnExternal);
 
+            HelperFunctions.UpdateChangesFile($@"{_pathToFilesOnExternal}\Changes.txt", allSortedFilesFromFromExternalDrive);
 
             return;
         }

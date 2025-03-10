@@ -32,27 +32,68 @@ namespace Project_Compare_Files
             return shortenedPath.TrimEnd('\\');
         }
 
-        static public SortedDictionary<string, FileInfoHolder> GetAllFilesFromPath(string startingDirectory)
+        static public SortedDictionary<string, FileInfoHolder> CheckForChanges(string pathToChangesFile)
+        {
+            SortedDictionary<string, FileInfoHolder> sortedFiles = new SortedDictionary<string, FileInfoHolder>();
+
+            try
+            {
+                if (File.Exists(pathToChangesFile))
+                {
+                    string[] lines = File.ReadAllLines(pathToChangesFile);
+
+                    for (int i = 0; i < lines.Length - 1; i += 2)
+                    {
+                        var fih = new FileInfoHolder("", DateTime.Parse(lines[i + 1]).ToUniversalTime());
+                        sortedFiles.Add(lines[i], fih);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Cannot find: {pathToChangesFile} | Moving to collect directories and files.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            
+            return sortedFiles;
+        }
+
+        static public List<string> GetAllDirectories(string startingDirectory)
         {
             List<string> allDirectories =
                 Directory.GetDirectories(startingDirectory)
                 .Where(dir => !dir.Contains("GitHub"))
                 .ToList();
 
-            SortedDictionary<string, FileInfoHolder> directories = new SortedDictionary<string, FileInfoHolder>();
-            List<string> files = new List<string>();
-
-            for (int i = 0; i < allDirectories.Count; i++)
+            try
             {
-                try
+                for (int i = 0; i < allDirectories.Count; i++)
                 {
-                    allDirectories.AddRange(Directory.GetDirectories(allDirectories[i]));
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
+                    try
+                    {
+                        allDirectories.AddRange(Directory.GetDirectories(allDirectories[i]));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            return allDirectories;
+        }
+
+        static public SortedDictionary<string, FileInfoHolder> GetAllFiles(List<string> allDirectories)
+        {
+            SortedDictionary<string, FileInfoHolder> allFiles = new SortedDictionary<string, FileInfoHolder>();
+            List<string> files = new List<string>();
 
             foreach (string directory in allDirectories)
             {
@@ -62,11 +103,11 @@ namespace Project_Compare_Files
 
                     foreach (string file in files)
                     {
-                        if (!directories.ContainsKey(file))
+                        if (!allFiles.ContainsKey(file))
                         {
                             FileInfo fi = new FileInfo(file);
                             FileInfoHolder fih = new FileInfoHolder(directory, fi.LastWriteTimeUtc);
-                            directories.Add(file, fih);
+                            allFiles.Add(file, fih);
                         }
                     }
                 }
@@ -75,7 +116,7 @@ namespace Project_Compare_Files
                     Console.WriteLine(ex.Message);
                 }
             }
-            return directories;
+            return allFiles;
         }
 
         static public void CopyFilesFromOneDriveToAnotherDrive(
@@ -122,6 +163,8 @@ namespace Project_Compare_Files
         {
             try
             {
+                List<string> keysToRemove = new List<string>();
+                
                 foreach (string fileFromExternalDrive in filesFromExternalDrive.Keys)
                 {
                     string filePathOnPc = fileFromExternalDrive.Replace(_shortPathToB, _shortPathToA);
@@ -132,7 +175,13 @@ namespace Project_Compare_Files
 
                         Directory.CreateDirectory(Path.GetDirectoryName(quarantineFilePath));
                         File.Move(fileFromExternalDrive, quarantineFilePath);
+                        keysToRemove.Add(fileFromExternalDrive);
                     }
+                }
+
+                foreach (string key in keysToRemove)
+                {
+                    filesFromExternalDrive.Remove(key);
                 }
             }
             catch (Exception ex)
@@ -162,6 +211,24 @@ namespace Project_Compare_Files
                 {
                     Directory.Delete(directory);
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        static public void UpdateChangesFile(string pathToChangesFile, SortedDictionary<string, FileInfoHolder> allSortedFilesFromFromExternalDrive)
+        {
+            try
+            {
+                using StreamWriter writetext = new StreamWriter(pathToChangesFile);
+                foreach (var file in allSortedFilesFromFromExternalDrive)
+                {
+                    writetext.WriteLine(file.Key);
+                    writetext.WriteLine(file.Value.Modified);
+                }
+                writetext.Close();
             }
             catch (Exception ex)
             {
