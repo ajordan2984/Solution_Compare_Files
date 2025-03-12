@@ -69,7 +69,6 @@ namespace Project_Compare_Files
                 Directory.GetDirectories(startingDirectory)
                 .Where(dir => !dir.Contains("GitHub"))
                 .ToList();
-            allDirectories.Add(startingDirectory);
 
             try
             {
@@ -140,19 +139,20 @@ namespace Project_Compare_Files
         public void CopyFilesFromOneDriveToAnotherDrive(
             SortedDictionary<string, FileInfoHolder> filesFromPcPath,
             SortedDictionary<string, FileInfoHolder> filesFromExternalDrive,
-            string _pathAToRemove,
-            string _pathBToAdd)
+            string _shortPathToFilesOnPc,
+            string _shortPathToFilesOnExternal)
         {
             try
             {
+                List<Tuple<string, string>> filesToCopy = new List<Tuple<string, string>>();
+                
                 foreach (string file in filesFromPcPath.Keys)
                 {
-                    string destinationPathForFile = file.Replace(_pathAToRemove, _pathBToAdd);
+                    string destinationPathForFile = file.Replace(_shortPathToFilesOnPc, _shortPathToFilesOnExternal);
 
                     if (!filesFromExternalDrive.ContainsKey(destinationPathForFile))
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(destinationPathForFile));
-                        File.Copy(file, destinationPathForFile);
+                        filesToCopy.Add(new Tuple<string, string>(file, destinationPathForFile));
                     }
                     else
                     {
@@ -161,10 +161,18 @@ namespace Project_Compare_Files
 
                         if (pcFih.Modified > exFih.Modified)
                         {
-                            File.Copy(file, destinationPathForFile, true);
+                            filesToCopy.Add(new Tuple<string, string>(file, destinationPathForFile));
                         }
                     }
                 }
+
+                ParallelOptions options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
+                Parallel.ForEach(filesToCopy, options, ftc =>
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(ftc.Item2));
+                    File.Copy(ftc.Item1, ftc.Item2, true);
+                });
             }
             catch (Exception ex)
             {
