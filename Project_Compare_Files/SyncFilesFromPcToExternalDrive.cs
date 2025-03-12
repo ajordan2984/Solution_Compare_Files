@@ -15,6 +15,8 @@ namespace Project_Compare_Files
         SortedDictionary<string, FileInfoHolder> allSortedFilesFromPcPath;
         SortedDictionary<string, FileInfoHolder> allSortedFilesFromFromExternalDrive;
 
+        HelperFunctions hf = new HelperFunctions();
+
         public SyncFilesFromPcToExternalDrive()
         {
             // Empty
@@ -54,8 +56,8 @@ namespace Project_Compare_Files
                 return false;
             }
 
-            _shortPathToFilesOnPc = HelperFunctions.ShortenedPath(_pathToFilesOnPc);
-            _shortPathToFilesOnExternal = HelperFunctions.ShortenedPath(_pathToFilesOnExternal);
+            _shortPathToFilesOnPc = hf.ShortenedPath(_pathToFilesOnPc);
+            _shortPathToFilesOnExternal = hf.ShortenedPath(_pathToFilesOnExternal);
 
             SyncFiles();
             return true;
@@ -63,34 +65,34 @@ namespace Project_Compare_Files
 
         public void SyncFiles()
         {
-            allSortedFilesFromFromExternalDrive = HelperFunctions.CheckForChanges($@"{_pathToFilesOnExternal}\Changes.txt");
+            allSortedFilesFromFromExternalDrive = hf.CheckForChanges($@"{_pathToFilesOnExternal}\Changes.txt");
 
             if (allSortedFilesFromFromExternalDrive.Count == 0)
             {
-                List<string> directoriesFromExternal = HelperFunctions.GetAllDirectories(_pathToFilesOnExternal);
-                allSortedFilesFromFromExternalDrive = HelperFunctions.GetAllFiles(directoriesFromExternal);
+                List<string> directoriesFromExternal = hf.GetAllDirectories(_pathToFilesOnExternal);
+                allSortedFilesFromFromExternalDrive = hf.GetAllFiles(directoriesFromExternal);
             }
 
             // Get files from Pc
-            List<string> directoriesFromPc = HelperFunctions.GetAllDirectories(_pathToFilesOnPc);
-            allSortedFilesFromPcPath = HelperFunctions.GetAllFiles(directoriesFromPc);
+            List<string> directoriesFromPc = hf.GetAllDirectories(_pathToFilesOnPc);
+            allSortedFilesFromPcPath = hf.GetAllFiles(directoriesFromPc);
 
-            HelperFunctions.CopyFilesFromOneDriveToAnotherDrive(
+            hf.CopyFilesFromOneDriveToAnotherDrive(
                 allSortedFilesFromPcPath,
                 allSortedFilesFromFromExternalDrive,
                 _shortPathToFilesOnPc,
                 _shortPathToFilesOnExternal
                 );
 
-            HelperFunctions.QuarantineFiles(
+            hf.QuarantineFiles(
             allSortedFilesFromPcPath,
             allSortedFilesFromFromExternalDrive,
             _shortPathToFilesOnPc,
             _shortPathToFilesOnExternal);
 
-            HelperFunctions.RecursiveRemoveDirectories(_pathToFilesOnExternal);
+            hf.RecursiveRemoveDirectories(_pathToFilesOnExternal);
 
-            HelperFunctions.UpdateChangesFile($@"{_pathToFilesOnExternal}\Changes.txt", allSortedFilesFromFromExternalDrive);
+            hf.UpdateChangesFile($@"{_pathToFilesOnExternal}\Changes.txt", allSortedFilesFromFromExternalDrive);
 
             return;
         }

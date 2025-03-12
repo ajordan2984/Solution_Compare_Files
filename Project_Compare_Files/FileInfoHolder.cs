@@ -5,7 +5,7 @@ namespace Project_Compare_Files
     public class FileInfoHolder
     {
         private DateTime _Modified;
-        private string _FileDirectory;
+        private string _FullFilePath;
         
         
         public DateTime Modified
@@ -20,22 +20,22 @@ namespace Project_Compare_Files
             }
         }
 
-        public string FileDirectory
+        public string FullFilePath
         {
             get
             {
-                return _FileDirectory;
+                return _FullFilePath;
             }
             set
             {
-                _FileDirectory = value;
+                _FullFilePath = value;
             }
         }
 
-        public FileInfoHolder(string fileDirectory, DateTime fileModified)
+        public FileInfoHolder(string fullFilePath, DateTime fileModified)
         {
             _Modified = fileModified;
-            _FileDirectory = fileDirectory;
+            _FullFilePath = fullFilePath;
         }
     }
 }

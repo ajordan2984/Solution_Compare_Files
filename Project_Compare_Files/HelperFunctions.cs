@@ -1,13 +1,15 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Project_Compare_Files
 {
-    static public class HelperFunctions
+    public class HelperFunctions
     {
-        static public string ShortenedPath(string path)
+        public string ShortenedPath(string path)
         {
             string[] tokens = null;
             string shortenedPath = "";
@@ -32,7 +34,7 @@ namespace Project_Compare_Files
             return shortenedPath.TrimEnd('\\');
         }
 
-        static public SortedDictionary<string, FileInfoHolder> CheckForChanges(string pathToChangesFile)
+        public SortedDictionary<string, FileInfoHolder> CheckForChanges(string pathToChangesFile)
         {
             SortedDictionary<string, FileInfoHolder> sortedFiles = new SortedDictionary<string, FileInfoHolder>();
 
@@ -61,12 +63,13 @@ namespace Project_Compare_Files
             return sortedFiles;
         }
 
-        static public List<string> GetAllDirectories(string startingDirectory)
+        public List<string> GetAllDirectories(string startingDirectory)
         {
             List<string> allDirectories =
                 Directory.GetDirectories(startingDirectory)
                 .Where(dir => !dir.Contains("GitHub"))
                 .ToList();
+            allDirectories.Add(startingDirectory);
 
             try
             {
@@ -90,36 +93,51 @@ namespace Project_Compare_Files
             return allDirectories;
         }
 
-        static public SortedDictionary<string, FileInfoHolder> GetAllFiles(List<string> allDirectories)
+        public SortedDictionary<string, FileInfoHolder> GetAllFiles(List<string> allDirectories)
         {
-            SortedDictionary<string, FileInfoHolder> allFiles = new SortedDictionary<string, FileInfoHolder>();
-            List<string> files = new List<string>();
+            SortedDictionary<string, FileInfoHolder> allSortedFiles = new SortedDictionary<string, FileInfoHolder>();
+            ConcurrentBag<FileInfoHolder> bagOfAllFiles = new ConcurrentBag<FileInfoHolder>();
 
-            foreach (string directory in allDirectories)
+            ParallelOptions options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
+            Parallel.ForEach(allDirectories, options, directory =>
             {
-                try
-                {
-                    files.AddRange(Directory.GetFiles(directory, "*"));
+                ConcurrentGetFiles(directory, bagOfAllFiles);
+            });
 
-                    foreach (string file in files)
-                    {
-                        if (!allFiles.ContainsKey(file))
-                        {
-                            FileInfo fi = new FileInfo(file);
-                            FileInfoHolder fih = new FileInfoHolder(directory, fi.LastWriteTimeUtc);
-                            allFiles.Add(file, fih);
-                        }
-                    }
-                }
-                catch (Exception ex)
+            foreach (var fih in bagOfAllFiles)
+            {
+                if(!allSortedFiles.ContainsKey(fih.FullFilePath))
                 {
-                    Console.WriteLine(ex.Message);
+                    allSortedFiles.Add(fih.FullFilePath, fih);
                 }
             }
-            return allFiles;
+            
+            return allSortedFiles;
         }
 
-        static public void CopyFilesFromOneDriveToAnotherDrive(
+        public void ConcurrentGetFiles(string directory, ConcurrentBag<FileInfoHolder> bagOfAllFiles)
+        {
+            List<string> files = new List<string>();
+
+            try
+            {
+                files.AddRange(Directory.GetFiles(directory, "*"));
+
+                foreach (string file in files)
+                {
+                   FileInfo fi = new FileInfo(file);
+                   FileInfoHolder fih = new FileInfoHolder(file, fi.LastWriteTimeUtc);
+                   bagOfAllFiles.Add(fih);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        public void CopyFilesFromOneDriveToAnotherDrive(
             SortedDictionary<string, FileInfoHolder> filesFromPcPath,
             SortedDictionary<string, FileInfoHolder> filesFromExternalDrive,
             string _pathAToRemove,
@@ -154,11 +172,11 @@ namespace Project_Compare_Files
             }
         }
 
-        static public void QuarantineFiles(
+        public void QuarantineFiles(
             SortedDictionary<string, FileInfoHolder> filesFromPcPath,
             SortedDictionary<string, FileInfoHolder> filesFromExternalDrive,
-            string _shortPathToA,
-            string _shortPathToB
+            string _shortPathToFilesOnPc,
+            string _shortPathToFilesOnExternal
             )
         {
             try
@@ -167,11 +185,11 @@ namespace Project_Compare_Files
                 
                 foreach (string fileFromExternalDrive in filesFromExternalDrive.Keys)
                 {
-                    string filePathOnPc = fileFromExternalDrive.Replace(_shortPathToB, _shortPathToA);
+                    string filePathOnPc = fileFromExternalDrive.Replace(_shortPathToFilesOnExternal, _shortPathToFilesOnPc);
 
                     if (!filesFromPcPath.ContainsKey(filePathOnPc))
                     {
-                        string quarantineFilePath = filePathOnPc.Replace(_shortPathToA, _shortPathToB + "\\QuarantineFolder");
+                        string quarantineFilePath = filePathOnPc.Replace(_shortPathToFilesOnPc, _shortPathToFilesOnExternal + "\\QuarantineFolder");
 
                         Directory.CreateDirectory(Path.GetDirectoryName(quarantineFilePath));
                         File.Move(fileFromExternalDrive, quarantineFilePath);
@@ -190,7 +208,7 @@ namespace Project_Compare_Files
             }
         }
 
-        static public void RecursiveRemoveDirectories(string directory)
+        public void RecursiveRemoveDirectories(string directory)
         {
             try
             {
@@ -218,7 +236,7 @@ namespace Project_Compare_Files
             }
         }
 
-        static public void UpdateChangesFile(string pathToChangesFile, SortedDictionary<string, FileInfoHolder> allSortedFilesFromFromExternalDrive)
+        public void UpdateChangesFile(string pathToChangesFile, SortedDictionary<string, FileInfoHolder> allSortedFilesFromFromExternalDrive)
         {
             try
             {
